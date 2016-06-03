@@ -49,8 +49,7 @@ class LSTMNetwork(object):
             for time_step in range(self.config.num_steps):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
-                # TODO: Implement Contextual part
-                print(self.context)
+                # TODO: Correctly pass context
                 (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], self.context, state)
                 outputs.append(cell_output)
 

@@ -80,14 +80,9 @@ def run_epoch(session, model, data, eval_op, context, reader, verbose=False):
     costs = 0.0
     num_iter = 0
     state = model.initial_state.eval()
-
-    print(context)
-
+    
     for step, (x, y) in enumerate(reader.data_iterator(data, model.config.batch_size, model.config.num_steps)):
-        c = []
-        for e0 in x:
-            c.append([context[str(e1)] for e1 in e0])
-
+        c = [[context[str(e1)] for e1 in e0] for e0 in x]
         cost, state, _ = session.run([model.cost, model.final_state, eval_op],
                                      {model.input_data: x,
                                       model.targets: y,
