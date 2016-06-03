@@ -14,6 +14,7 @@ class LSTMNetwork(object):
         self._config = config
 
         self._input_data = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
+        self._context = tf.placeholder(tf.int32, [config.batch_size, config.num_steps, config.context_dim])
         self._targets = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
 
         #self._lstm_cell = lstm_cell = self.define_lstm_cell()
@@ -49,7 +50,8 @@ class LSTMNetwork(object):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
                 # TODO: Implement Contextual part
-                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], [], state)
+                print(self.context)
+                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], self.context, state)
                 outputs.append(cell_output)
 
         return [tf.reshape(tf.concat(1, outputs), [-1, self.config.hidden_size]), state]
@@ -130,6 +132,10 @@ class LSTMNetwork(object):
     @property
     def input_data(self):
         return self._input_data
+
+    @property
+    def context(self):
+        return self._context
 
     @property
     def targets(self):

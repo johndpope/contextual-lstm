@@ -9,7 +9,6 @@ def main():
     split_data(os.path.join('data/ml-100k', 'u.data'))
 
 
-
 def split_data(path):
     num_lines = file_len(path)
     with open(path) as f:

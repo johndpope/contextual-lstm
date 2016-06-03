@@ -25,7 +25,8 @@ def context_data(data_path=None):
 
     with open(data_path) as f:
         data = f.read().split("\n")
-        genres = [{element.split("|")[0]: element.split("|")[6:24]} for element in data]
+        genres = {element.split("|")[0]: [int(e) for e in element.split("|")[6:24]] for element in data}
+        genres.pop('')
 
         return genres
 
