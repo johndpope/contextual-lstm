@@ -47,7 +47,7 @@ class MlReader(Reader):
             genres = {element.split("|")[0]: [int(e) for e in element.split("|")[6:24]] for element in data}
             genres.pop('')
 
-            return genres
+            return genres, len(genres[str(1)])
 
     @staticmethod
     def _read_movie_ids(path):

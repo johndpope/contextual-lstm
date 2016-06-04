@@ -17,17 +17,17 @@ def test_network(data_set):
     reader, data_path = get_setup(data_set)
 
     raw_data = reader.raw_data(data_path)
-    train_data, valid_data, test_data, num_elements = raw_data
+    train_data, valid_data, test_data, item_dim = raw_data
 
-    context = reader.context_data(data_path)
+    context, context_dim = reader.context_data(data_path)
 
     config = get_config()
-    config.vocab_size = num_elements
-    config.context_dim = len(context[str(1)])
+    config.item_dim = item_dim
+    config.context_dim = context_dim
     eval_config = get_config()
     eval_config.batch_size = 1
     eval_config.num_steps = 1
-    eval_config.vocab_size = num_elements
+    eval_config.item_dim = item_dim
 
     with tf.Graph().as_default(), tf.Session() as session:
         initializer = tf.random_uniform_initializer(-config.init_scale, config.init_scale)
@@ -41,18 +41,26 @@ def test_network(data_set):
         tf.initialize_all_variables().run()
 
         for i in range(config.max_max_epoch):
-            lr_decay = config.lr_decay ** max(i - config.max_epoch, 0.0)
-            model_training.assign_lr(session, config.learning_rate * lr_decay)
+            training_epoch(model_training, session, train_data, context, config, reader, i)
+            validation_epoch(model_valid, session, valid_data, context, reader, i)
+        validation_epoch(model_test, session, test_data, context, reader)
 
-            print("Epoch: %d Learning rate: %.3f" % (i + 1, session.run(model_training.lr)))
-            train_perplexity = run_epoch(session, model_training, train_data, model_training.train_op, context, reader,
-                                         verbose=True)
-            print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
-            valid_perplexity = run_epoch(session, model_valid, valid_data, tf.no_op(), context, reader)
-            print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
 
-        test_perplexity = run_epoch(session, model_test, test_data, tf.no_op(), context, reader)
-        print("Test Perplexity: %.3f" % test_perplexity)
+def training_epoch(model, session, data, context, config, reader, epoch):
+    lr_decay = config.lr_decay ** max(epoch - config.max_epoch, 0.0)
+    model.assign_lr(session, config.learning_rate * lr_decay)
+
+    print("Epoch: %d Learning rate: %.3f" % (epoch + 1, session.run(model.lr)))
+    perplexity = run_epoch(session, model, data, model.train_op, context, reader, verbose=True)
+    print("Epoch: %d Train Perplexity: %.3f" % (epoch + 1, perplexity))
+
+
+def validation_epoch(model, session, data, context, reader, epoch=None):
+    perplexity = run_epoch(session, model, data, tf.no_op(), context, reader)
+    if epoch is not None:
+        print("Epoch: %d Valid Perplexity: %.3f" % (epoch + 1, perplexity))
+    else:
+        print("Test Perplexity: %.3f" % perplexity)
 
 
 def run_epoch(session, model, data, eval_op, context, reader, verbose=False):
@@ -108,7 +116,7 @@ class Config(object):
     keep_prob = 1.0
     lr_decay = 0.5
     batch_size = 20
-    vocab_size = 10000
+    item_dim = 10000
     context_dim = 18
 
 

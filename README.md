@@ -1,2 +1,4 @@
 # contextual-lstm
-Building a context based LSTM network with Tensorflow. Testing again. And again. And one more time.
+I'm planning to build a Recommender System based on a contextual LSTM network. Details will follow soon :)
+
+First time working with Python & Tensorflow (http://www.tensorflow.org/).

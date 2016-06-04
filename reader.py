@@ -1,6 +1,3 @@
-import unittest
-
-
 class Reader(object):
     def raw_data(self, data_path=None):
         raise NotImplementedError("Abstract method")
