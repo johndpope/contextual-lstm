@@ -1,11 +1,11 @@
-import os
-import collections
+from reader import Reader
 
-import tensorflow as tf
+# Reader prototype for Lastfm 1k-users data set #
 
 
-def lastfm_raw_data(data_path =None):
-    lastfm_path = os.path.join(data_path, 'userid-timestamp-artid-artname-traid-traname.tsv')
+class LastfmReader(Reader):
+    def raw_data(self, data_path=None):
+        return None
 
-def _generate_ids(path):
-    with tf.gfile.GFile(path, "r") as file:
+    def data_iterator(self, input_data, batch_size, num_steps):
+        return None
