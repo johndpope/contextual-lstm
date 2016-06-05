@@ -78,7 +78,7 @@ class ContextualLSTMCell(ContextualRNNCell):
         with vs.variable_scope(scope or type(self).__name__):
             # Parameters of gates are concatenated into one multiply for efficiency.
             c, h = array_ops.split(1, 2, state)
-            concat = _linear([inputs, h], 4 * self._num_units, True)
+            concat = _linear([inputs, h, context], 4 * self._num_units, True)
 
             # i = input_gate, j = new_input, f = forget_gate, o = output_gate
             i, j, f, o = array_ops.split(1, 4, concat)
@@ -100,7 +100,7 @@ def _linear(args, output_size, bias, bias_start=0.0, scope=None):
     shapes = [a.get_shape().as_list() for a in args]
     for shape in shapes:
         if len(shape) != 2:
-            raise ValueError("Linear is expecting 2D arguments: %s" % str(shapes))
+            raise ValueError("Linear is expecting 3D arguments: %s" % str(shapes))
         if not shape[1]:
             raise ValueError("Linear expects shape[1] of arguments: %s" % str(shapes))
         else:

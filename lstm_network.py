@@ -14,7 +14,7 @@ class LSTMNetwork(object):
         self._config = config
 
         self._input_data = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
-        self._context = tf.placeholder(tf.int32, [config.batch_size, config.num_steps, config.context_dim])
+        self._context = tf.placeholder(tf.float32, [config.batch_size, config.num_steps, config.context_dim])
         self._targets = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
 
         #self._lstm_cell = lstm_cell = self.define_lstm_cell()
@@ -35,7 +35,7 @@ class LSTMNetwork(object):
 
     def define_input(self):
         with tf.device("/cpu:0"):
-            embedding = tf.get_variable("embedding", [self.config.vocab_size, self.config.hidden_size])
+            embedding = tf.get_variable("embedding", [self.config.item_dim, self.config.hidden_size])
             inputs = tf.nn.embedding_lookup(embedding, self.input_data)
 
         if self.is_training and self.config.keep_prob < 1.0:
@@ -49,8 +49,10 @@ class LSTMNetwork(object):
             for time_step in range(self.config.num_steps):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
-                # TODO: Correctly pass context
-                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], self.context, state)
+
+                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], self.context[:, time_step, :], state)
+                #(cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], self.context[:, time_step, :], state)
+                #(cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], state)
                 outputs.append(cell_output)
 
         return [tf.reshape(tf.concat(1, outputs), [-1, self.config.hidden_size]), state]
@@ -70,8 +72,8 @@ class LSTMNetwork(object):
         return ContextualMultiRNNCell([lstm_cell] * self.config.num_layers)
 
     def define_cost(self):
-        softmax_w = tf.get_variable("softmax_w", [self.config.hidden_size, self.config.vocab_size])
-        softmax_b = tf.get_variable("softmax_b", [self.config.vocab_size])
+        softmax_w = tf.get_variable("softmax_w", [self.config.hidden_size, self.config.item_dim])
+        softmax_b = tf.get_variable("softmax_b", [self.config.item_dim])
 
         logits = tf.matmul(self.outputs, softmax_w) + softmax_b
         loss = tf.nn.seq2seq.sequence_loss_by_example(

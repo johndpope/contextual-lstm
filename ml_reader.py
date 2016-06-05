@@ -1,7 +1,5 @@
 import os
 
-import numpy as np
-
 from operator import itemgetter
 from reader import Reader
 
@@ -19,32 +17,13 @@ class MlReader(Reader):
 
         return train_movie_ids, val_movie_ids, test_movie_ids, len(train_movie_ids)
 
-    def data_iterator(self, input_data, batch_size, num_steps):
-        input_data = np.array(input_data, dtype=np.int32)
-
-        data_len = len(input_data)
-        batch_len = data_len // batch_size
-        data = np.zeros([batch_size, batch_len], dtype=np.int32)
-        for i in range(batch_size):
-            data[i] = input_data[batch_len * i:batch_len * (i + 1)]
-
-        epoch_size = (batch_len - 1) // num_steps
-
-        if epoch_size == 0:
-            raise ValueError("epoch_size == 0, decrease batch_size or num_steps")
-
-        for i in range(epoch_size):
-            x = data[:, i*num_steps:(i+1)*num_steps]
-            y = data[:, i*num_steps+1:(i+1)*num_steps+1]
-            yield (x, y)
-
     @staticmethod
     def context_data(data_path=None):
         data_path = os.path.join(data_path, 'u.item')
 
         with open(data_path) as f:
             data = f.read().split("\n")
-            genres = {element.split("|")[0]: [int(e) for e in element.split("|")[6:24]] for element in data}
+            genres = {element.split("|")[0]: [float(e) for e in element.split("|")[6:24]] for element in data}
             genres.pop('')
 
             return genres, len(genres[str(1)])
