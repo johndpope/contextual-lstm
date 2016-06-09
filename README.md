@@ -1,5 +1,5 @@
 # Contextual LSTM
-I'm planning to build a Recommender System based on a contextual LSTM network. 
+I'm planning to build a Recommender System based on a contextual [LSTM](https://arxiv.org/pdf/1409.2329.pdf) network. 
 
 ## Current state
 
