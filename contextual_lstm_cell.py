@@ -85,7 +85,6 @@ class ContextualLSTMCell(ContextualRNNCell):
 
             new_c = c * sigmoid(f + self._forget_bias) + sigmoid(i) * tanh(j)
             new_h = tanh(new_c) * sigmoid(o)
-
             return new_h, array_ops.concat(1, [new_c, new_h])
 
 

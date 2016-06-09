@@ -23,7 +23,7 @@ class LSTMNetwork(object):
         self._initial_state = lstm_cell.zero_state(config.batch_size, tf.float32)
 
         self._inputs = self.define_input()
-        self._outputs, self._final_state = self.define_output(self._initial_state)
+        self._outputs, self._context_state, self._final_state = self.define_output(self._initial_state)
 
         self._cost = self.define_cost()
 
@@ -45,16 +45,19 @@ class LSTMNetwork(object):
 
     def define_output(self, state):
         outputs = []
+        context_states = []
         with tf.variable_scope("RNN"):
             for time_step in range(self.config.num_steps):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
-                context_state = tf.reduce_sum(self.context[:, 0:time_step, :], 1, keep_dims=False) / (time_step + 1)
-                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], context_state, state)
-                #(cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], state)
+                #TODO: Take care here!
+                context_states.append(tf.reduce_sum(self.context[:, 0:time_step, :], 1, keep_dims=False) / (time_step + 1))
+                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], context_states[time_step], state)
                 outputs.append(cell_output)
 
-        return [tf.reshape(tf.concat(1, outputs), [-1, self.config.hidden_size]), state]
+        return [tf.reshape(tf.concat(1, outputs), [-1, self.config.hidden_size]),
+                tf.reshape(tf.concat(1, context_states), [-1, self.config.context_dim]),
+                state]
 
     def define_lstm_cell(self):
         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(self.config.hidden_size, forget_bias=0.0)
@@ -71,10 +74,12 @@ class LSTMNetwork(object):
         return ContextualMultiRNNCell([lstm_cell] * self.config.num_layers)
 
     def define_cost(self):
-        softmax_w = tf.get_variable("softmax_w", [self.config.hidden_size, self.config.item_dim])
-        softmax_b = tf.get_variable("softmax_b", [self.config.item_dim])
+        L_0 = tf.get_variable("l_h", [self.config.hidden_size, self.config.item_dim])
+        L_c = tf.get_variable("l_c", [self.config.context_dim, self.config.hidden_size])
+        b = tf.get_variable("b", [self.config.item_dim])
 
-        logits = tf.matmul(self.outputs, softmax_w) + softmax_b
+        context_embedding = tf.matmul(self._context_state, L_c)
+        logits = tf.matmul(self.outputs + context_embedding, L_0) + b
         loss = tf.nn.seq2seq.sequence_loss_by_example(
             [logits],
             [tf.reshape(self.targets, [-1])],

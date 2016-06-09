@@ -115,7 +115,7 @@ class Config(object):
     max_grad_norm = 5
     num_layers = 2
     num_steps = 10
-    hidden_size = 200
+    hidden_size = 200  # = embedding_size?
     max_epoch = 4
     max_max_epoch = 13
     keep_prob = 1.0
@@ -132,8 +132,8 @@ def test_reader(reader, data_path):
 class LSTMTest(unittest.TestCase):
     @staticmethod
     def test_lstm():
-        #test_network("ml-genre")
-        test_network("ml-mf")
+        test_network("ml-genre")
+        #test_network("ml-mf")
         #test_network("lastfm")
         #test_network("ptb")
 
