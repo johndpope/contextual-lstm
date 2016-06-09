@@ -49,9 +49,8 @@ class LSTMNetwork(object):
             for time_step in range(self.config.num_steps):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
-
-                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], self.context[:, time_step, :], state)
-                #(cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], self.context[:, time_step, :], state)
+                context_state = tf.reduce_sum(self.context[:, 0:time_step, :], 1, keep_dims=False) / (time_step + 1)
+                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], context_state, state)
                 #(cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], state)
                 outputs.append(cell_output)
 

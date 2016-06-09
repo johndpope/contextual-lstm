@@ -11,15 +11,17 @@ from ptb_reader import PtbReader
 from ml_reader import MlReader
 from lastfm_reader import LastfmReader
 from lstm_network import LSTMNetwork
+from mf_context import MfContext
+from genre_context import GenreContext
 
 
 def test_network(data_set):
-    reader, data_path = get_setup(data_set)
+    reader, context_provider, data_path = get_setup(data_set)
 
     raw_data = reader.raw_data(data_path)
     train_data, valid_data, test_data, item_dim = raw_data
 
-    context, context_dim = reader.context_data(data_path)
+    context, context_dim = context_provider.context_data
 
     config = get_config()
     config.item_dim = item_dim
@@ -28,6 +30,7 @@ def test_network(data_set):
     eval_config.batch_size = 1
     eval_config.num_steps = 1
     eval_config.item_dim = item_dim
+    eval_config.context_dim = context_dim
 
     with tf.Graph().as_default(), tf.Session() as session:
         initializer = tf.random_uniform_initializer(-config.init_scale, config.init_scale)
@@ -95,11 +98,13 @@ def get_config():
 
 def get_setup(data_set):
     if data_set == "ptb":
-        return PtbReader(), "data/ptb"
+        return PtbReader(), None, "data/ptb"
     elif data_set == "lastfm":
-        return LastfmReader(), "data/lastfm"
-    elif data_set == "ml":
-        return MlReader(), "data/ml-100k"
+        return LastfmReader(), None, "data/lastfm"
+    elif data_set == "ml-genre":
+        return MlReader(), GenreContext("data/ml-100k"), "data/ml-100k"
+    elif data_set == "ml-mf":
+        return MlReader(), MfContext("data/ml-100k"), "data/ml-100k"
     else:
         return PtbReader(), "data/ptb"
 
@@ -127,9 +132,10 @@ def test_reader(reader, data_path):
 class LSTMTest(unittest.TestCase):
     @staticmethod
     def test_lstm():
-        test_network("ml")
-        # test_network("lastfm")
-        # test_network("ptb")
+        #test_network("ml-genre")
+        test_network("ml-mf")
+        #test_network("lastfm")
+        #test_network("ptb")
 
         # test_reader(MlReader(), "data/ml-100k")
         # test_reader(LastfmReader(), "data/lastfm")

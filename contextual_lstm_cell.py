@@ -100,7 +100,7 @@ def _linear(args, output_size, bias, bias_start=0.0, scope=None):
     shapes = [a.get_shape().as_list() for a in args]
     for shape in shapes:
         if len(shape) != 2:
-            raise ValueError("Linear is expecting 3D arguments: %s" % str(shapes))
+            raise ValueError("Linear is expecting 2D arguments: %s" % str(shapes))
         if not shape[1]:
             raise ValueError("Linear expects shape[1] of arguments: %s" % str(shapes))
         else:
