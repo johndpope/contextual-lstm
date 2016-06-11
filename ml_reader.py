@@ -15,9 +15,9 @@ class MlReader(Reader):
         val_path = os.path.join(data_path, 'ml_val.dat')
         test_path = os.path.join(data_path, 'ml_test.dat')
 
-        train_movie_ids = self._read_movie_ids(train_path)
-        val_movie_ids = self._read_movie_ids(val_path)
-        test_movie_ids = self._read_movie_ids(test_path)
+        train_movie_ids = MlReader._read_movie_ids(train_path)
+        val_movie_ids = MlReader._read_movie_ids(val_path)
+        test_movie_ids = MlReader._read_movie_ids(test_path)
 
         return train_movie_ids, val_movie_ids, test_movie_ids, len(train_movie_ids)
 
