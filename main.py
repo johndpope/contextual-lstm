@@ -4,15 +4,16 @@ from __future__ import print_function
 
 import time
 import unittest
+
 import numpy as np
 import tensorflow as tf
+from data_sets.io.lastfm.lastfm_reader import LastfmReader
+from data_sets.io.ptb.ptb_reader import PtbReader
+from data_sets.io.movielens.mf_context import MfContext
 
-from ptb_reader import PtbReader
-from ml_reader import MlReader
-from lastfm_reader import LastfmReader
+from data_sets.io.movielens.genre_context import GenreContext
+from data_sets.io.movielens.ml_reader import MlReader
 from lstm_network import LSTMNetwork
-from mf_context import MfContext
-from genre_context import GenreContext
 
 
 def test_network(data_set):
@@ -98,15 +99,15 @@ def get_config():
 
 def get_setup(data_set):
     if data_set == "ptb":
-        return PtbReader(), None, "data/ptb"
+        return PtbReader(), None, "data_sets/src/ptb"
     elif data_set == "lastfm":
-        return LastfmReader(), None, "data/lastfm"
+        return LastfmReader(), None, "data_sets/src/lastfm"
     elif data_set == "ml-genre":
-        return MlReader(), GenreContext("data/ml-100k"), "data/ml-100k"
+        return MlReader(), GenreContext("data_sets/src/ml-100k"), "data_sets/src/ml-100k"
     elif data_set == "ml-mf":
-        return MlReader(), MfContext("data/ml-100k"), "data/ml-100k"
+        return MlReader(), MfContext("data_sets/src/ml-100k"), "data_sets/src/ml-100k"
     else:
-        return PtbReader(), "data/ptb"
+        return PtbReader(), "data_sets/src/ptb"
 
 
 class Config(object):
@@ -137,9 +138,9 @@ class LSTMTest(unittest.TestCase):
         #test_network("lastfm")
         #test_network("ptb")
 
-        # test_reader(MlReader(), "data/ml-100k")
-        # test_reader(LastfmReader(), "data/lastfm")
-        # test_reader(PtbReader(), "data/ptb")
+        # test_reader(MlReader(), "data_sets/ml-100k")
+        # test_reader(LastfmReader(), "data_sets/lastfm")
+        # test_reader(PtbReader(), "data_sets/ptb")
 
 
 if __name__ == "__main__":

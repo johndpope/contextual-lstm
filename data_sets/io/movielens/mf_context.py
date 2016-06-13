@@ -22,8 +22,8 @@ class MfContext(Context):
         rating_values_tr = np.array([rating[2] for rating in ratings_tr], dtype=np.float32)
         rating_values_eval = np.array([rating[2] for rating in ratings_val], dtype=np.float32)
         mean_rating = np.mean(rating_values_tr)
-        max_steps = 10000
-        config_tr = Config(ratings)
+        max_steps = 10
+        self._config = config_tr = Config(ratings)
         config_eval = Config(ratings)
 
         with tf.Graph().as_default(), tf.Session() as session:
@@ -57,7 +57,7 @@ class MfContext(Context):
                                  model.input: ratings}
                                 )
 
-            Qt = tf.transpose(model.output['Q']).eval()
+            self._q = Qt = tf.transpose(model.output['Q']).eval()
 
             #TODO: Correct?
             self._context_data = {str(i): Qt[i] for i in range(len(Qt))}
@@ -66,12 +66,20 @@ class MfContext(Context):
     def context_data(self):
         return self._context_data, len(self._context_data[str(0)])
 
+    @property
+    def q(self):
+        return self._q
+
+    @property
+    def config(self):
+        return self._config
+
 
 class Config(object):
     def __init__(self, ratings):
         self.learning_rate = 0.01
         self.mu = 0.1
-        self.rank = 10
+        self.rank = 2
         self.num_ratings = len(ratings)
         self.user_indices = [np.int32(rating[0]) for rating in ratings]
         self.item_indices = [np.int32(rating[1]) for rating in ratings]

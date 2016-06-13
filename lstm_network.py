@@ -18,6 +18,7 @@ class LSTMNetwork(object):
         self._targets = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
 
         #self._lstm_cell = lstm_cell = self.define_lstm_cell()
+        #self._lstm_cell = lstm_cell = self.define_rnn_cell()
         self._lstm_cell = lstm_cell = self.define_contextual_lstm_cell()
 
         self._initial_state = lstm_cell.zero_state(config.batch_size, tf.float32)
@@ -53,6 +54,7 @@ class LSTMNetwork(object):
                 #TODO: Take care here!
                 context_states.append(tf.reduce_sum(self.context[:, 0:time_step, :], 1, keep_dims=False) / (time_step + 1))
                 (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], context_states[time_step], state)
+                #(cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], state)
                 outputs.append(cell_output)
 
         return [tf.reshape(tf.concat(1, outputs), [-1, self.config.hidden_size]),
@@ -65,6 +67,13 @@ class LSTMNetwork(object):
             lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=self.config.keep_prob)
 
         return tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * self.config.num_layers)
+
+    def define_rnn_cell(self):
+        rnn_cell = tf.nn.rnn_cell.BasicRNNCell(self.config.hidden_size)
+        if self.is_training and self.config.keep_prob < 1.0:
+            rnn_cell = tf.nn.rnn_cell.DropoutWrapper(rnn_cell, output_keep_prob=self.config.keep_prob)
+
+        return tf.nn.rnn_cell.MultiRNNCell([rnn_cell] *  self.config.num_layers)
 
     def define_contextual_lstm_cell(self):
         lstm_cell = ContextualLSTMCell(self.config.hidden_size, forget_bias=0.0)
