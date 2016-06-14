@@ -1,9 +1,11 @@
-import unittest
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import tensorflow as tf
 import numpy as np
 
-from data_sets.io.movielens.mf_context import MfContext
+from matrix_factorization import MatrixFactorization
 from data_sets.io.movielens.ml_reader import MlReader
 
 
@@ -49,10 +51,6 @@ class SessionMF(object):
         return self._features
 
     @property
-    def input_data(self):
-        return self._input_data
-
-    @property
     def targets(self):
         return self._targets
 
@@ -71,25 +69,25 @@ class Config():
     rank = 2
 
 
-class SessionMFTest(unittest.TestCase):
+class SessionMFTest():
     @staticmethod
     def test_session_mf():
         data_path = "data_sets/src/ml-100k"
 
-        mf_context = MfContext(data_path)
-        q_dict = mf_context.context_data[0]
+        mf = MatrixFactorization(data_path)
+        Q = mf.Q
 
         reader = MlReader()
 
         config = Config()
-        config.item_dim = mf_context.config.num_items
-
+        config.item_dim = mf.config.num_items
+        config.rank = mf.config.rank
 
         raw_data = reader.raw_data(data_path)
         _, _, data, item_dim = raw_data
 
         with tf.Graph().as_default(), tf.Session() as session:
-            session_mf = SessionMF(config, mf_context.q)
+            session_mf = SessionMF(config, Q)
             tf.initialize_all_variables().run()
             costs = 0.0
             num_iter = 0
@@ -100,18 +98,11 @@ class SessionMFTest(unittest.TestCase):
                 #features = [q[str(e1)] for e1 in x[0]]
                 features = []
 
-                for element in x[0]:
-                    for e in q_dict[str(element)]:
-                        features.append(e)
-
-                features = np.reshape(features, [-1, 2])
+                features = np.reshape(features, [-1, config.rank])
                 cost, = session.run([session_mf.cost], {session_mf.targets: y, session_mf.features: features})
 
                 costs += cost
                 num_iter += config.num_steps
 
-            return np.exp(costs / num_iter)
-
-
-if __name__ == "__main__":
-    unittest.main()
+            perplexity = np.exp(costs / num_iter)
+            print("Test Perplexity: %.3f" % perplexity)
