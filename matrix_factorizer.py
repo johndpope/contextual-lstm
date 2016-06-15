@@ -23,6 +23,7 @@ class MatrixFactorizer(object):
     def define_output(self):
         P = tf.get_variable("P", [self.config.num_users, self.config.rank])
         Q = tf.get_variable("Q", [self.config.rank, self.config.num_items])
+
         return {'R': tf.matmul(P, Q), 'P': P, 'Q': Q}
 
     def define_cost(self):

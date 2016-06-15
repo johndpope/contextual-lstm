@@ -79,12 +79,11 @@ def run_epoch(session, model, data, eval_op, context, reader, verbose=False):
 
     for step, (x, y) in enumerate(reader.data_iterator(data, model.config.batch_size, model.config.num_steps)):
         c = [[context[str(e1)] for e1 in e0] for e0 in x]
-        cost, state, _ = session.run([model.cost, model.final_state, eval_op],
+        cost, state, _, logits = session.run([model.cost, model.final_state, eval_op, model._logits],
                                      {model.input_data: x,
                                       model.targets: y,
                                       model.context: c,
                                       model.initial_state: state})
-
         costs += cost
         num_iter += model.config.num_steps
 
@@ -139,14 +138,14 @@ class LSTMTest(unittest.TestCase):
     @staticmethod
     def test_lstm():
         #test_network("ml-genre")
-        #test_network("ml-mf")
+        test_network("ml-mf")
         #test_network("lastfm")
         #test_network("ptb")
 
         # test_reader(MlReader(), "data_sets/ml-100k")
         # test_reader(LastfmReader(), "data_sets/lastfm")
         # test_reader(PtbReader(), "data_sets/ptb")
-        SessionMFTest().test_session_mf()
+        #SessionMFTest().test_session_mf()
 
 if __name__ == "__main__":
     unittest.main()

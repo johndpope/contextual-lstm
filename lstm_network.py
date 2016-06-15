@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import tensorflow as tf
 
 from contextual_lstm_cell import ContextualLSTMCell
@@ -88,7 +89,8 @@ class LSTMNetwork(object):
         b = tf.get_variable("b", [self.config.item_dim])
 
         context_embedding = tf.matmul(self._context_state, L_c)
-        logits = tf.matmul(self.outputs + context_embedding, L_0) + b
+        self._logits = logits = tf.matmul(self.outputs + context_embedding, L_0) + b
+        #self._logits = logits = tf.matmul(self.outputs, L_0) + b
         loss = tf.nn.seq2seq.sequence_loss_by_example(
             [logits],
             [tf.reshape(self.targets, [-1])],

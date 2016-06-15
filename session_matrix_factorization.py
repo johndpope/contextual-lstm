@@ -17,6 +17,8 @@ class SessionMF(object):
         self._features = tf.placeholder(tf.float32, [config.num_steps, config.rank])
         self._q = q
 
+        self._mean_rating = tf.placeholder(tf.float32)
+
         self._targets = tf.placeholder(tf.int32, [1, config.num_steps])
 
         self._cost = self.define_cost()
@@ -29,10 +31,11 @@ class SessionMF(object):
             else:
                 user_features = tf.zeros([1, self.config.rank])
 
-            output = tf.matmul(user_features, tf.transpose(self.q))
+            output = tf.matmul(user_features, tf.transpose(self.q)) + self.mean_rating
             outputs.append(output)
 
-        outputs = tf.reshape(tf.concat(1, outputs), [-1, self.config.item_dim])
+        self._outputs = outputs = tf.reshape(tf.concat(1, outputs), [-1, self.config.item_dim])
+
         loss = tf.nn.seq2seq.sequence_loss_by_example(
             [outputs],
             [tf.reshape(self.targets, [-1])],
@@ -53,6 +56,10 @@ class SessionMF(object):
     @property
     def targets(self):
         return self._targets
+
+    @property
+    def mean_rating(self):
+        return self._mean_rating
 
     @property
     def q(self):
@@ -98,8 +105,12 @@ class SessionMFTest():
                 #features = [q[str(e1)] for e1 in x[0]]
                 features = []
 
+                for element in x[0]:
+                    for e in Q[element - 1]:
+                        features.append(e)
+
                 features = np.reshape(features, [-1, config.rank])
-                cost, = session.run([session_mf.cost], {session_mf.targets: y, session_mf.features: features})
+                cost, outputs = session.run([session_mf.cost, session_mf._outputs], {session_mf.targets: y, session_mf.features: features, session_mf.mean_rating: mf._mean_rating})
 
                 costs += cost
                 num_iter += config.num_steps

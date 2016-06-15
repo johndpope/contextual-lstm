@@ -1,3 +1,5 @@
+# Some of the code inspired by http://katbailey.github.io/post/matrix-factorization-with-tensorflow/
+
 from __future__ import division
 from __future__ import print_function
 
@@ -18,9 +20,10 @@ class MatrixFactorization(object):
         robjects.r['load'](os.path.join(data_path, "ratings-100k.RData"))
         ratings = numpy2ri.ri2py(robjects.r['ratings_df'])
         ratings_tr, ratings_val = train_test_split(ratings)
+        rating_values = np.array([rating[2] for rating in ratings], dtype=np.float32)
         rating_values_tr = np.array([rating[2] for rating in ratings_tr], dtype=np.float32)
         rating_values_eval = np.array([rating[2] for rating in ratings_val], dtype=np.float32)
-        mean_rating = np.mean(rating_values_tr)
+        self._mean_rating = mean_rating = np.mean(rating_values)
         self._config = config_tr = Config(ratings)
         config_eval = Config(ratings)
 
@@ -33,26 +36,26 @@ class MatrixFactorization(object):
 
             tf.initialize_all_variables().run()
 
-            # Run the graph and see how we're doing on every 500th iteration.
             for i in range(config_tr.max_steps):
                 if i % 500 == 0:
                     res = session.run([model.cost],
                                       {model.mean_rating: mean_rating,
-                                       model.input: ratings}
+                                       model.input: rating_values}
                                       )
                     av_err = res[0]
+
                     print("Training - Cost: %s" % av_err)
 
                     res = session.run([model_eval.cost],
                                       {model_eval.mean_rating: mean_rating,
-                                       model_eval.input: ratings}
+                                       model_eval.input: rating_values}
                                       )
                     av_err_eval = res[0]
                     print("Evaluation - Cost: %s" % av_err_eval)
                 else:
                     session.run(model.train_op,
                                 {model.mean_rating: mean_rating,
-                                 model.input: ratings}
+                                 model.input: rating_values}
                                 )
 
             output = model.output
@@ -79,10 +82,10 @@ class MatrixFactorization(object):
 
 class Config(object):
     def __init__(self, ratings):
-        self.max_steps = 10
-        self.learning_rate = 0.01
+        self.max_steps = 15000
+        self.learning_rate = 0.9 #0.01
         self.mu = 0.1
-        self.rank = 2
+        self.rank = 10
         self.num_ratings = len(ratings)
         self.user_indices = [np.int32(rating[0]) for rating in ratings]
         self.item_indices = [np.int32(rating[1]) for rating in ratings]
