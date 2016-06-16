@@ -31,7 +31,7 @@ class MatrixFactorizer(object):
 
         #error_op = tf.add(results, self.mean_rating) - self.input
         error_op = results - self.input
-
+        #TODO: Train w/ Cross Entropy?
         sum_squared_error = tf.reduce_sum(tf.square(error_op))
         regularization = self.config.mu * (tf.reduce_sum(tf.square(self.output['P'])) + tf.reduce_sum(tf.square(self.output['Q'])))
 
