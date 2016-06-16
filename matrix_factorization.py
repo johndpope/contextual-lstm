@@ -84,7 +84,7 @@ class Config(object):
     def __init__(self, ratings):
         self.max_steps = 15000
         self.learning_rate = 0.9 #0.01
-        self.mu = 0.1
+        self.mu = 0.0 # 0.1
         self.rank = 10
         self.num_ratings = len(ratings)
         self.user_indices = [np.int32(rating[0]) for rating in ratings]

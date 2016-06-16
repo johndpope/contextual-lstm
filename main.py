@@ -138,14 +138,14 @@ class LSTMTest(unittest.TestCase):
     @staticmethod
     def test_lstm():
         #test_network("ml-genre")
-        test_network("ml-mf")
+        #test_network("ml-mf")
         #test_network("lastfm")
         #test_network("ptb")
 
         # test_reader(MlReader(), "data_sets/ml-100k")
         # test_reader(LastfmReader(), "data_sets/lastfm")
         # test_reader(PtbReader(), "data_sets/ptb")
-        #SessionMFTest().test_session_mf()
+        SessionMFTest().test_session_mf()
 
 if __name__ == "__main__":
     unittest.main()

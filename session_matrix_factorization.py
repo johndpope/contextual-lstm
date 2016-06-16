@@ -27,14 +27,22 @@ class SessionMF(object):
         outputs = []
         for time_step in range(self.config.num_steps):
             if time_step > 0:
-                user_features = tf.reduce_sum(self.features[0:time_step - 1, :], 0, keep_dims=True) / (time_step + 1)
+                user_features = tf.reduce_sum(self.features[0:time_step, :], 0, keep_dims=True) / time_step
             else:
-                user_features = tf.zeros([1, self.config.rank])
+                # Initialize with random small numbers to prevent log(0)
+                user_features = tf.random_uniform([1, self.config.rank], minval=0.01, maxval=0.01)
 
-            output = tf.matmul(user_features, tf.transpose(self.q)) + self.mean_rating
+            #output = tf.matmul(user_features, tf.transpose(self.q)) + self.mean_rating
+            output = tf.matmul(user_features, tf.transpose(self.q))
+            sum_over_output = tf.reduce_sum(output)
+            output = tf.div(output, sum_over_output)
+            #output = tf.log(output)
+
             outputs.append(output)
 
         self._outputs = outputs = tf.reshape(tf.concat(1, outputs), [-1, self.config.item_dim])
+
+
 
         loss = tf.nn.seq2seq.sequence_loss_by_example(
             [outputs],
@@ -111,6 +119,10 @@ class SessionMFTest():
 
                 features = np.reshape(features, [-1, config.rank])
                 cost, outputs = session.run([session_mf.cost, session_mf._outputs], {session_mf.targets: y, session_mf.features: features, session_mf.mean_rating: mf._mean_rating})
+
+                #for element in outputs:
+                 #   if np.isnan(element).any() or np.count_nonzero(element) < len(element):
+                  #      print(element)
 
                 costs += cost
                 num_iter += config.num_steps
