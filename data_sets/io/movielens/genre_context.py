@@ -1,6 +1,6 @@
 import os
 
-from context import Context
+from contextual.context import Context
 
 
 class GenreContext(Context):

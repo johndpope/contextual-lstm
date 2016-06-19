@@ -1,10 +1,9 @@
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
-
 from matrix_factorization import MatrixFactorization
-from context import Context
+
+from contextual.context import Context
 
 
 class MfContext(Context):

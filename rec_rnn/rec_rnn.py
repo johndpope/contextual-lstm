@@ -2,30 +2,27 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
 import tensorflow as tf
 
-from contextual_lstm_cell import ContextualLSTMCell
-from contextual_lstm_cell import ContextualMultiRNNCell
+from rec_rnn.rec_lstm_cell import RecLSTMCell
 
 
-class LSTMNetwork(object):
+class RecRNN(object):
     def __init__(self, is_training, config):
         self._is_training = is_training
         self._config = config
 
-        self._input_data = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
-        self._context = tf.placeholder(tf.float32, [config.batch_size, config.num_steps, config.context_dim])
+        self._input_i = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
+        self._input_u = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
         self._targets = tf.placeholder(tf.int32, [config.batch_size, config.num_steps])
 
-        #self._lstm_cell = lstm_cell = self.define_lstm_cell()
-        #self._lstm_cell = lstm_cell = self.define_rnn_cell()
-        self._lstm_cell = lstm_cell = self.define_contextual_lstm_cell()
+        self._lstm_cell = lstm_cell = self.define_lstm_cell()
 
         self._initial_state = lstm_cell.zero_state(config.batch_size, tf.float32)
 
-        self._inputs = self.define_input()
-        self._outputs, self._context_state, self._final_state = self.define_output(self._initial_state)
+        #self._embedded_i, self._embedded_u = self.define_input()
+        self._embedding = self.define_input()
+        self._outputs, self._final_state = self.define_output(self._initial_state)
 
         self._cost = self.define_cost()
 
@@ -37,60 +34,45 @@ class LSTMNetwork(object):
 
     def define_input(self):
         with tf.device("/cpu:0"):
-            embedding = tf.get_variable("embedding", [self.config.item_dim, self.config.hidden_size])
-            inputs = tf.nn.embedding_lookup(embedding, self.input_data)
+            embedding_i = tf.get_variable("embedding_i", [self.config.item_dim, self.config.hidden_size])
+            embedded_i = tf.nn.embedding_lookup(embedding_i, self.input_i)
+
+            embedding_u = tf.get_variable("embedding_u", [self.config.user_dim, self.config.hidden_size])
+            embedded_u = tf.nn.embedding_lookup(embedding_u, self.input_u)
 
         if self.is_training and self.config.keep_prob < 1.0:
-            inputs = tf.nn.dropout(inputs, self.config.keep_prob)
+            embedded_i = tf.nn.dropout(embedded_i, self.config.keep_prob)
+            embedded_u = tf.nn.dropout(embedded_u, self.config.keep_prob)
 
-        return inputs
+        return tf.concat(2, [embedded_i, embedded_u])
 
     def define_output(self, state):
         outputs = []
-        context_states = []
         with tf.variable_scope("RNN"):
             for time_step in range(self.config.num_steps):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
-                #TODO: Take care here!
-                context_states.append(tf.reduce_sum(self.context[:, 0:time_step, :], 1, keep_dims=False) / (time_step + 1))
-                (cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], context_states[time_step], state)
-                #(cell_output, state) = self.lstm_cell(self.inputs[:, time_step, :], state)
+                #(cell_output, state) = self.lstm_cell([self.embedded_i[:, time_step, :], self.embedded_u[:, time_step, :]], state)
+                (cell_output, state) = self.lstm_cell(self.embedding[:, time_step, :], state)
                 outputs.append(cell_output)
 
         return [tf.reshape(tf.concat(1, outputs), [-1, self.config.hidden_size]),
-                tf.reshape(tf.concat(1, context_states), [-1, self.config.context_dim]),
                 state]
 
     def define_lstm_cell(self):
-        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(self.config.hidden_size, forget_bias=0.0)
+        #num_units = self.config.hidden_size * 2
+        lstm_cell = RecLSTMCell(self.config.hidden_size, forget_bias=0.0)
         if self.is_training and self.config.keep_prob < 1.0:
             lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=self.config.keep_prob)
 
         return tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * self.config.num_layers)
 
-    def define_rnn_cell(self):
-        rnn_cell = tf.nn.rnn_cell.BasicRNNCell(self.config.hidden_size)
-        if self.is_training and self.config.keep_prob < 1.0:
-            rnn_cell = tf.nn.rnn_cell.DropoutWrapper(rnn_cell, output_keep_prob=self.config.keep_prob)
-
-        return tf.nn.rnn_cell.MultiRNNCell([rnn_cell] *  self.config.num_layers)
-
-    def define_contextual_lstm_cell(self):
-        lstm_cell = ContextualLSTMCell(self.config.hidden_size, forget_bias=0.0)
-        if self.is_training and self.config.keep_prob < 1.0:
-            lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=self.config.keep_prob)
-
-        return ContextualMultiRNNCell([lstm_cell] * self.config.num_layers)
 
     def define_cost(self):
-        L_0 = tf.get_variable("l_h", [self.config.hidden_size, self.config.item_dim])
-        L_c = tf.get_variable("l_c", [self.config.context_dim, self.config.hidden_size])
+        L_0 = tf.get_variable("l_0", [self.config.hidden_size, self.config.item_dim])
         b = tf.get_variable("b", [self.config.item_dim])
 
-        context_embedding = tf.matmul(self._context_state, L_c)
-        self._logits = logits = tf.matmul(self.outputs + context_embedding, L_0) + b
-        #self._logits = logits = tf.matmul(self.outputs, L_0) + b
+        self._logits = logits = tf.matmul(self.outputs, L_0) + b
         loss = tf.nn.seq2seq.sequence_loss_by_example(
             [logits],
             [tf.reshape(self.targets, [-1])],
@@ -114,8 +96,16 @@ class LSTMNetwork(object):
         return self._lstm_cell
 
     @property
-    def inputs(self):
-        return self._inputs
+    def embedding(self):
+        return self._embedding
+
+    @property
+    def embedded_i(self):
+        return self._embedded_i
+
+    @property
+    def embedded_u(self):
+        return self._embedded_u
 
     @property
     def outputs(self):
@@ -146,12 +136,12 @@ class LSTMNetwork(object):
         return self._is_training
 
     @property
-    def input_data(self):
-        return self._input_data
+    def input_i(self):
+        return self._input_i
 
     @property
-    def context(self):
-        return self._context
+    def input_u(self):
+        return self._input_u
 
     @property
     def targets(self):

@@ -1,8 +1,9 @@
 from __future__ import division
 
-from reader import Reader
-import os
 import collections
+import os
+
+from contextual.reader import Reader
 
 
 class LastfmReader(Reader):
@@ -11,7 +12,7 @@ class LastfmReader(Reader):
 
 
     # TODO: Differentiate between same song name by different artists
-    def raw_data(self, data_path=None):
+    def raw_item_data(self, data_path=None):
         train_path = os.path.join(data_path, 'lastfm_train.dat')
         val_path = os.path.join(data_path, 'lastfm_val.dat')
         test_path = os.path.join(data_path, 'lastfm_test.dat')
