@@ -8,6 +8,8 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
+from data_sets.io.lastfm.lastfm_reader import LastfmReader
+from data_sets.io.movielens.genre_context import GenreContext
 from data_sets.io.movielens.ml_reader import MlReader
 from rec_rnn.rec_rnn import RecRNN
 
@@ -17,6 +19,9 @@ def test_network():
 
     raw_data = reader.raw_data(data_path)
     train_data, valid_data, test_data, item_dim, user_dim = raw_data
+
+    print(item_dim)
+    print(user_dim)
 
     config = Config()
     config.item_dim = item_dim
@@ -40,7 +45,7 @@ def test_network():
 
         for i in range(config.max_max_epoch):
             training_epoch(model_training, session, train_data, config, reader, i)
-            validation_epoch(model_valid, session, valid_data, reader, i)
+#            validation_epoch(model_valid, session, valid_data, reader, i)
         validation_epoch(model_test, session, test_data, reader)
 
 
@@ -86,7 +91,8 @@ def run_epoch(session, model, data, eval_op, reader, verbose=False):
 
 
 def get_setup():
-    return MlReader(), "data_sets/src/ml-100k"
+    #return MlReader(), "data_sets/src/ml-100k"
+    return LastfmReader(), "data_sets/src/lastfm"
 
 
 class Config(object):

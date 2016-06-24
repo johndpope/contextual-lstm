@@ -52,7 +52,6 @@ class RecRNN(object):
             for time_step in range(self.config.num_steps):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
-                #(cell_output, state) = self.lstm_cell([self.embedded_i[:, time_step, :], self.embedded_u[:, time_step, :]], state)
                 (cell_output, state) = self.lstm_cell(self.embedding[:, time_step, :], state)
                 outputs.append(cell_output)
 
