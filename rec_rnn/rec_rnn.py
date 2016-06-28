@@ -22,7 +22,7 @@ class RecRNN(object):
 
         #self._embedded_i, self._embedded_u = self.define_input()
         self._embedding = self.define_input()
-        self._outputs, self._final_state = self.define_output(self._initial_state)
+        self._outputs, self._usi, self._final_state = self.define_output(self._initial_state)
 
         self._cost = self.define_cost()
 
@@ -48,14 +48,18 @@ class RecRNN(object):
 
     def define_output(self, state):
         outputs = []
+        usi = []
         with tf.variable_scope("RNN"):
             for time_step in range(self.config.num_steps):
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
                 (cell_output, state) = self.lstm_cell(self.embedding[:, time_step, :], state)
-                outputs.append(cell_output)
+                h, u = tf.split(1, 2, cell_output)
+                outputs.append(h)
+                usi.append(u)
 
         return [tf.reshape(tf.concat(1, outputs), [-1, self.config.hidden_size]),
+                tf.reshape(tf.concat(1, usi), [-1, self.config.hidden_size]),
                 state]
 
     def define_lstm_cell(self):
@@ -71,7 +75,7 @@ class RecRNN(object):
         L_0 = tf.get_variable("l_0", [self.config.hidden_size, self.config.item_dim])
         b = tf.get_variable("b", [self.config.item_dim])
 
-        self._logits = logits = tf.matmul(self.outputs, L_0) + b
+        self._logits = logits = tf.matmul(self.outputs + self._usi, L_0) + b
         loss = tf.nn.seq2seq.sequence_loss_by_example(
             [logits],
             [tf.reshape(self.targets, [-1])],

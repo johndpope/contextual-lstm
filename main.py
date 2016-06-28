@@ -45,7 +45,7 @@ def test_network():
 
         for i in range(config.max_max_epoch):
             training_epoch(model_training, session, train_data, config, reader, i)
-#            validation_epoch(model_valid, session, valid_data, reader, i)
+            validation_epoch(model_valid, session, valid_data, reader, i)
         validation_epoch(model_test, session, test_data, reader)
 
 
@@ -91,8 +91,8 @@ def run_epoch(session, model, data, eval_op, reader, verbose=False):
 
 
 def get_setup():
-    #return MlReader(), "data_sets/src/ml-100k"
-    return LastfmReader(), "data_sets/src/lastfm"
+    return MlReader(), "data_sets/src/ml-100k"
+    #return LastfmReader(), "data_sets/src/lastfm"
 
 
 class Config(object):

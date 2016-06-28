@@ -54,15 +54,23 @@ class RecLSTMCell(RNNCell):
     def __call__(self, inputs, state, scope=None):
         with vs.variable_scope(scope or type(self).__name__):
             # Parameters of gates are concatenated into one multiply for efficiency.
+            input_i, input_u = array_ops.split(1, 2, inputs)
             c, h = array_ops.split(1, 2, state)
-            concat = _linear([inputs, h], 4 * self._num_units, True)
+            concat = _linear([input_i, h], 4 * self._num_units, True)
 
             # i = input_gate, j = new_input, f = forget_gate, o = output_gate
             i, j, f, o = array_ops.split(1, 4, concat)
 
-            new_c = c * sigmoid(f + self._forget_bias) + sigmoid(i) * tanh(j)
+            mat_uf = vs.get_variable("mat_uf", [self.input_size, self.output_size])
+            user_f = math_ops.matmul(input_u, mat_uf)
+
+            mat_ui = vs.get_variable("mat_ui", [self.input_size, self.output_size])
+            user_i = math_ops.matmul(input_u, mat_ui)
+
+
+            new_c = c * sigmoid(f + self._forget_bias + user_f) + sigmoid(i + user_i) * tanh(j)
             new_h = tanh(new_c) * sigmoid(o)
-            return new_h, array_ops.concat(1, [new_c, new_h])
+            return array_ops.concat(1, [new_h, input_u]), array_ops.concat(1, [new_c, new_h])
 
 
 def _linear(args, output_size, bias, bias_start=0.0, scope=None):
